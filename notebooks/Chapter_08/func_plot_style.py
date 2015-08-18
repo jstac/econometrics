@@ -1,13 +1,9 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib import rc
 import numpy as np
 
 sns.set(context='talk')
 sns.set_style("ticks", {"xtick.major.size": 4, "ytick.major.size": 4})
-
-rc('font',**{'family':'serif','serif':['Palatino']})
-rc('text', usetex=True)
 
 def subplots(**kwargs):
     "Custom subplots with axes throught the origin"
