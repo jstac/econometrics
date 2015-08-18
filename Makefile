@@ -6,6 +6,14 @@ image:
 upload: 
 	docker push sanguineturtle/econometrics
 
+relaunch:
+	docker stop $(docker ps -a -q)
+	docker rm $(docker ps -a -q)
+	./scripts/run.sh
+
+launch:
+	./scripts/run.sh
+
 super-nuke: nuke
 	-docker rmi sanguineturtle/econometrics
 
