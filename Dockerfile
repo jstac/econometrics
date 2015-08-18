@@ -82,7 +82,8 @@ RUN conda install --yes r-irkernel r-plyr r-devtools r-rcurl r-dplyr r-ggplot2 r
 
 # IJulia and Julia packages
 RUN julia -e 'Pkg.add("IJulia")'
-#RUN julia -e 'Pkg.add("Gadfly")' && julia -e 'Pkg.add("RDatasets")' && julia -e 'Pkg.add("PyPlot")' && julia -e 'Pkg.add("Distributions")' && julia -e 'Pkg.add("KernelEstimator")' 
+RUN julia -e 'Pkg.add("PyPlot")' && julia -e 'Pkg.add("Distributions")' && julia -e 'Pkg.add("KernelEstimator")' 
+# julia -e 'Pkg.add("Gadfly")' && julia -e 'Pkg.add("RDatasets")' &&
 
 #Add Templates
 USER root
