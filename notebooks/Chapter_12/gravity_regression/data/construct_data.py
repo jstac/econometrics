@@ -77,6 +77,10 @@ im = data[["year","origin","destination","import_val"]].rename(columns={'import_
 #-Attribute Data-#
 #----------------#
 
+#------------------#
+#-Importer Reports-#
+#------------------#
+
 #-Merge Importer Reported Data Together-#
 dataset = im.copy()
 
@@ -135,3 +139,54 @@ dataset.to_csv("gravity_dataset_2013.csv", index=False)
 	# ex.rename(columns={'ex':'v'}, inplace=True)
 	# im.rename(columns={'im':'v'}, inplace=True)
 	# data = ex.append(im)
+
+#------------------#
+#-Exporter Reports-#
+#------------------#
+
+#-Merge Importer Reported Data Together-#
+dataset = ex.copy()
+
+#-Bilateral Relationships-#
+dist = pd.read_excel('dist_cepii.xls')
+bilat_attrs = ["iso_o","iso_d","contig","comlang_off","colony","dist","distcap","distw","distwces"]
+dist = dist[bilat_attrs].drop_duplicates()
+dataset = dataset.merge(dist[bilat_attrs], left_on=["eiso3c","iiso3c"], right_on=["iso_o","iso_d"], how="inner")
+for item in ["iso_o","iso_d"]:
+	del dataset[item]
+
+#-Country Attributes-#
+geo = pd.read_excel('geo_cepii.xls')
+cntry_attrs = ["iso3","landlocked"]
+geo = geo[cntry_attrs].drop_duplicates() 		#This is required as there are multiple entries for some countries such as AUS
+dataset = dataset.merge(geo[cntry_attrs], left_on="eiso3c", right_on="iso3", how="inner")
+del dataset["iso3"]
+dataset.rename(columns={'landlocked':'ell'}, inplace=True)
+dataset = dataset.merge(geo[cntry_attrs], left_on="iiso3c", right_on="iso3", how="inner")
+del dataset["iso3"]
+dataset.rename(columns={'landlocked':'ill',}, inplace=True)
+
+#-WDI-#
+wdi = pd.read_csv('WDI_Data.csv')
+idx = ["Country Code","Indicator Code"]
+years = ["2013"]
+wdi = wdi[idx+years]
+wdi.columns = ["iso3c","code","value"]
+wdi = wdi.set_index(["iso3c","code"]).unstack("code")
+wdi.columns = wdi.columns.droplevel()
+# NY.GDP.MKTP.KD = GDP (constant 2005 US$)
+# NY.GDP.PCAP.KD = GDP per capita (constant 2005 US$)
+codes = ['NY.GDP.MKTP.KD','NY.GDP.PCAP.KD', 'SP.POP.TOTL']
+wdi_data = wdi[codes]
+wdi_data.columns = ['egdp', 'egdppc','epop']
+wdi_data = wdi_data.reset_index()
+dataset = dataset.merge(wdi_data, left_on="eiso3c", right_on="iso3c")
+del dataset['iso3c']
+wdi_data = wdi[codes]
+wdi_data.columns = ['igdp', 'igdppc','ipop']
+wdi_data = wdi_data.reset_index()
+dataset = dataset.merge(wdi_data, left_on="iiso3c", right_on="iso3c")
+del dataset['iso3c']
+
+#-Save Dataset-#
+dataset.to_csv("gravity_dataset_2013_exporter_reports.csv", index=False)
