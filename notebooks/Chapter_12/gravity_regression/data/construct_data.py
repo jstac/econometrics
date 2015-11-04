@@ -83,6 +83,7 @@ dataset = im.copy()
 #-Bilateral Relationships-#
 dist = pd.read_excel('dist_cepii.xls')
 bilat_attrs = ["iso_o","iso_d","contig","comlang_off","colony","dist","distcap","distw","distwces"]
+dist = dist[bilat_attrs].drop_duplicates()
 dataset = dataset.merge(dist[bilat_attrs], left_on=["eiso3c","iiso3c"], right_on=["iso_o","iso_d"], how="inner")
 for item in ["iso_o","iso_d"]:
 	del dataset[item]
@@ -90,6 +91,7 @@ for item in ["iso_o","iso_d"]:
 #-Country Attributes-#
 geo = pd.read_excel('geo_cepii.xls')
 cntry_attrs = ["iso3","landlocked"]
+geo = geo[cntry_attrs].drop_duplicates() 		#This is required as there are multiple entries for some countries such as AUS
 dataset = dataset.merge(geo[cntry_attrs], left_on="eiso3c", right_on="iso3", how="inner")
 del dataset["iso3"]
 dataset.rename(columns={'landlocked':'ell'}, inplace=True)
