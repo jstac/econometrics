@@ -55,7 +55,7 @@ ENV USER econ
 ENV PATH $CONDA_DIR/bin:$PATH
 WORKDIR $HOME
 
-# RUN conda install --yes ipython-notebook terminado && conda clean -yt
+RUN conda install --yes ipython-notebook terminado && conda clean -yt
 
 RUN ipython profile create
 
@@ -66,9 +66,8 @@ RUN chown econ:econ /home/econ -R
 USER econ
 
 # Python packages
-# RUN conda install --yes pip numpy pandas scikit-learn scikit-image matplotlib scipy seaborn sympy cython patsy statsmodels cloudpickle dill numba bokeh && conda clean -yt
+RUN conda install --yes python=3.5 anaconda && conda clean -yt
 RUN pip install quantecon
-
 
 # Now for a python2 environment
 # RUN conda create -p $CONDA_DIR/envs/python2 python=2.7 ipython numpy pandas scikit-learn scikit-image matplotlib scipy seaborn sympy cython patsy statsmodels cloudpickle dill numba bokeh && conda clean -yt
