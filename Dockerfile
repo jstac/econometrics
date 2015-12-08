@@ -8,24 +8,31 @@ MAINTAINER Matthew McKay <mamckay@gmail.com>
 
 USER root
 
+RUN apt-get install -y --no-install-recommends curl ca-certificates
+RUN echo "cacert=/etc/ssl/certs/ca-certificates.crt" > ~/.curlrc
+
 #-Additional Python Packages-#
 RUN pip install quantecon
 RUN $CONDA_DIR/envs/python2/bin/pip install quantecon
-
-#-Additional Julia Packages-#
-RUN julia -e 'Pkg.update()' && julia -e 'Pkg.build("IJulia")'
-RUN julia -e 'Pkg.add("PyPlot")' && julia -e 'Pkg.add("Distributions")' && julia -e 'Pkg.add("KernelEstimator")'
-
-#-Add Notebooks-#
-ADD notebooks/ /home/jovyan/work/
 
 #-Add Templates-#
 ADD jupyter_notebook_config.py /home/jovyan/.jupyter/
 ADD templates/ /srv/templates/
 RUN chmod a+rX /srv/templates
 
+#-Add Notebooks-#
+ADD notebooks/ /home/jovyan/work/
+
 #-Convert notebooks to the current format-#
 RUN find /home/. -name '*.ipynb' -exec jupyter nbconvert --to notebook {} --output {} \;
 RUN find /home/. -name '*.ipynb' -exec jupyter trust {} \;
 
 USER jovyan
+
+#-Additional Julia Packages-#
+RUN echo "cacert=/etc/ssl/certs/ca-certificates.crt" > ~/.curlrc
+RUN julia -e 'Pkg.add("PyCall"); Pkg.checkout("PyCall"); Pkg.build("PyCall"); using PyCall'
+RUN julia -e 'Pkg.add("IJulia"); using IJulia'
+RUN julia -e 'Pkg.add("PyPlot"); Pkg.checkout("PyPlot"); Pkg.build("PyPlot"); using PyPlot' 
+RUN julia -e 'Pkg.add("Distributions"); using Distributions'
+RUN julia -e 'Pkg.add("KernelEstimator"); using KernelEstimator'
