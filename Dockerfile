@@ -8,8 +8,29 @@ MAINTAINER Matthew McKay <mamckay@gmail.com>
 
 USER root
 
+#-Add Additional Debian Packages-#
 RUN apt-get install -y --no-install-recommends curl ca-certificates
 RUN echo "cacert=/etc/ssl/certs/ca-certificates.crt" > ~/.curlrc
+
+#-Upgrade to Python=3.5-#
+RUN conda install --yes \
+	python=3.5 \
+    'ipywidgets' \
+    'pandas' \
+    'matplotlib' \
+    'scipy' \
+    'seaborn' \
+    'scikit-learn' \
+    'scikit-image' \
+    'sympy' \
+    'cython' \
+    'patsy' \
+    'statsmodels' \
+    'cloudpickle' \
+    'dill' \
+    'numba' \
+    'bokeh' \
+    && conda clean -yt
 
 #-Additional Python Packages-#
 RUN pip install quantecon
