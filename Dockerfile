@@ -9,7 +9,7 @@ MAINTAINER Matthew McKay <mamckay@gmail.com>
 USER root
 
 #-Add Additional Debian Packages-#
-RUN apt-get install -y --no-install-recommends curl ca-certificates
+RUN apt-get install -y --no-install-recommends curl ca-certificates dvipng
 RUN echo "cacert=/etc/ssl/certs/ca-certificates.crt" > ~/.curlrc
 
 #-Upgrade to Python=3.5-#
