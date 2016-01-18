@@ -1,99 +1,59 @@
-# Econometrics Book Base Docker Image (for tmpnb orchestrate.py server)
-# User: econ
+# Econometrics Book Docker Image
+# User: jovyan
+# This uses the Jupyter DataScience Docker Container with Python, R and Julia
 
-FROM debian:jessie
+FROM jupyter/datascience-notebook
 
 MAINTAINER Matthew McKay <mamckay@gmail.com>
 
-# Install all OS dependencies for fully functional notebook server
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get install -yq --no-install-recommends \
-    git \
-    vim \
-    wget \
-    build-essential \
-    python-dev \
-    ca-certificates \
-    bzip2 \
-    unzip \
-    libsm6 \
-    pandoc \
-    texlive-latex-base \
-    texlive-latex-extra \
-    texlive-fonts-extra \
-    texlive-fonts-recommended \
-    supervisor \
-    sudo \
-    && apt-get clean
-
-# Julia dependencies
-RUN apt-get install -y julia libnettle4 && apt-get clean
-
-# R dependencies that conda can't provide (X, fonts, compilers)
-RUN apt-get install -y libzmq3-dev libcurl4-openssl-dev libxrender1 fonts-dejavu gfortran gcc && apt-get clean
-
-ENV CONDA_DIR /opt/conda
-
-# Install conda
-RUN echo 'export PATH=$CONDA_DIR/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-3.9.1-Linux-x86_64.sh && \
-    /bin/bash /Miniconda3-3.9.1-Linux-x86_64.sh -b -p $CONDA_DIR && \
-    rm Miniconda3-3.9.1-Linux-x86_64.sh && \
-    $CONDA_DIR/bin/conda install --yes conda==3.14.1
-
-# We run our docker images with a non-root user as a security precaution.
-# econ is our user
-RUN useradd -m -s /bin/bash econ
-RUN chown -R econ:econ $CONDA_DIR
-
-EXPOSE 8888
-
-USER econ
-ENV HOME /home/econ
-ENV SHELL /bin/bash
-ENV USER econ
-ENV PATH $CONDA_DIR/bin:$PATH
-WORKDIR $HOME
-
-RUN conda install --yes ipython-notebook terminado && conda clean -yt
-
-RUN ipython profile create
-
-# Workaround for issue with ADD permissions
 USER root
-ADD notebooks/ /home/econ/
-RUN chown econ:econ /home/econ -R
-USER econ
 
-# Python packages
-RUN conda install --yes pip numpy pandas scikit-learn scikit-image matplotlib scipy seaborn sympy cython patsy statsmodels cloudpickle dill numba bokeh && conda clean -yt
+#-Add Additional Debian Packages-#
+RUN apt-get install -y --no-install-recommends curl ca-certificates
+RUN echo "cacert=/etc/ssl/certs/ca-certificates.crt" > ~/.curlrc
 
-# Now for a python2 environment
-#RUN conda create -p $CONDA_DIR/envs/python2 python=2.7 ipython numpy pandas scikit-learn scikit-image matplotlib scipy seaborn sympy cython patsy statsmodels cloudpickle dill numba bokeh && conda clean -yt
-#RUN $CONDA_DIR/envs/python2/bin/python $CONDA_DIR/envs/python2/bin/ipython kernelspec install-self --user
+#-Upgrade to Python=3.5-#
+RUN conda install --yes \
+	python=3.5 \
+    'ipywidgets' \
+    'pandas' \
+    'matplotlib' \
+    'scipy' \
+    'seaborn' \
+    'scikit-learn' \
+    'scikit-image' \
+    'sympy' \
+    'cython' \
+    'patsy' \
+    'statsmodels' \
+    'cloudpickle' \
+    'dill' \
+    'numba' \
+    'bokeh' \
+    && conda clean -yt
 
-#Install QuantEcon
+#-Additional Python Packages-#
 RUN pip install quantecon
-#RUN source activate python2 && pip install quantecon && source deactivate python2
+RUN $CONDA_DIR/envs/python2/bin/pip install quantecon
 
-# R packages
-RUN conda config --add channels r
-RUN conda install --yes r-irkernel r-plyr r-devtools r-rcurl r-dplyr r-ggplot2 r-caret rpy2 r-tidyr r-shiny r-rmarkdown r-forecast r-stringr r-rsqlite r-reshape2 r-nycflights13 r-randomforest && conda clean -yt
-
-# IJulia and Julia packages
-RUN julia -e 'Pkg.add("IJulia")'
-RUN julia -e 'Pkg.add("PyPlot")' && julia -e 'Pkg.add("Distributions")' && julia -e 'Pkg.add("KernelEstimator")' 
-# julia -e 'Pkg.add("Gadfly")' && julia -e 'Pkg.add("RDatasets")' &&
-
-#Add Templates
-USER root
-ADD profile_default /home/econ/.ipython/profile_default
+#-Add Templates-#
+ADD jupyter_notebook_config.py /home/jovyan/.jupyter/
 ADD templates/ /srv/templates/
 RUN chmod a+rX /srv/templates
-USER econ
 
-# Convert notebooks to the current format
-RUN find /home/. -name '*.ipynb' -exec ipython nbconvert --to notebook {} --output {} \;
-RUN find /home/. -name '*.ipynb' -exec ipython trust {} \;
+#-Add Notebooks-#
+ADD notebooks/ /home/jovyan/work/
 
-CMD ipython notebook
+#-Convert notebooks to the current format-#
+RUN find /home/. -name '*.ipynb' -exec jupyter nbconvert --to notebook {} --output {} \;
+RUN find /home/. -name '*.ipynb' -exec jupyter trust {} \;
+
+USER jovyan
+
+#-Additional Julia Packages-#
+RUN echo "cacert=/etc/ssl/certs/ca-certificates.crt" > ~/.curlrc
+RUN julia -e 'Pkg.add("PyCall"); Pkg.checkout("PyCall"); Pkg.build("PyCall"); using PyCall'
+RUN julia -e 'Pkg.add("IJulia"); using IJulia'
+RUN julia -e 'Pkg.add("PyPlot"); Pkg.checkout("PyPlot"); Pkg.build("PyPlot"); using PyPlot' 
+RUN julia -e 'Pkg.add("Distributions"); using Distributions'
+RUN julia -e 'Pkg.add("KernelEstimator"); using KernelEstimator'
